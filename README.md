@@ -1,2 +1,2 @@
 # Aquadactyl
-Aquadactyl
+Aquadactyl is new panel game server.
