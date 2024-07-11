@@ -25,4 +25,15 @@ sudo systemctl enable apache2
 # Установка Git
 sudo apt-get install git -y
 
-echo "Установка завершена! Apache2 и UFW настроены."
+# Клонирование репозитория с GitHub
+repo_url="https://github.com/famenodes/Aquadactyl.git"
+git clone $repo_url /var/www/html/aquadactyl
+
+# Настройка прав доступа для веб-сервера
+sudo chown -R www-data:www-data /var/www/html/aquadactyl
+sudo chmod -R 755 /var/www/html/aquadactyl
+
+# Перезапуск Apache2 для применения изменений
+sudo systemctl restart apache2
+
+echo "Установка завершена! Ваш проект доступен по адресу http://your_server_ip/aquadactyl"
