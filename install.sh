@@ -1,13 +1,19 @@
 #!/bin/bash
 
-# Обновление пакетов и установка необходимых утилит
-sudo apt-get update -y
-sudo apt-get upgrade -y
+# Установка зависимостей
+sudo apt-get update
+sudo apt-get install -y curl git unzip
 
-# Установка UFW (Uncomplicated Firewall)
-sudo apt-get install ufw -y
+# Запрос данных у пользователя
+read -p "Введите никнейм: " admin_username
+read -p "Введите фамилию: " admin_lastname
+read -p "Введите почту: " admin_email
+read -p "Введите пароль: " admin_password
+read -p "Введите домен для вингсов (wings.domain.com): " wings_domain
+read -p "Введите домен панели (domain.com): " panel_domain
 
-# Настройка UFW
+# Установка UFW (Uncomplicated Firewall) и настройка
+sudo apt-get install -y ufw
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow ssh
@@ -16,33 +22,37 @@ sudo ufw allow https
 sudo ufw enable
 
 # Установка Apache2
-sudo apt-get install apache2 -y
+sudo apt-get install -y apache2
 
-# Запуск и включение Apache2 при старте системы
-sudo systemctl start apache2
-sudo systemctl enable apache2
+# Установка PHP и модулей
+sudo apt-get install -y php libapache2-mod-php php-mysql
 
-# Установка Git
-sudo apt-get install git -y
+# Установка MySQL
+sudo apt-get install -y mysql-server
 
-# Запрос доменов у пользователя
-read -p "Введите домен для вингсов (wings.domain.com): " wings_domain
-read -p "Введите домен панели (domain.com): " panel_domain
+# Настройка MySQL
+sudo mysql -e "CREATE DATABASE aquadactyl;"
+sudo mysql -e "CREATE USER 'aquadactyl_user'@'localhost' IDENTIFIED BY 'yourpassword';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON aquadactyl.* TO 'aquadactyl_user'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
 
-# Клонирование репозитория с GitHub
+# Создание таблицы пользователей
+sudo mysql -u root -e "USE aquadactyl; CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(255) NOT NULL, lastname VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL); INSERT INTO users (username, lastname, email, password) VALUES ('$admin_username', '$admin_lastname', '$admin_email', '$admin_password');"
+
+# Клонирование репозитория Aquadactyl с GitHub
 repo_url="https://github.com/famenodes/Aquadactyl.git"
 git clone $repo_url /var/www/html/aquadactyl
 
-# Перемещение файлов в нужные директории
+# Перемещение файлов стилей и скриптов
 mkdir -p /var/www/html/aquadactyl/files
 mv /var/www/html/aquadactyl/styles.css /var/www/html/aquadactyl/files/
 mv /var/www/html/aquadactyl/script.js /var/www/html/aquadactyl/files/
 
-# Настройка прав доступа для веб-сервера
+# Настройка прав доступа для Apache2
 sudo chown -R www-data:www-data /var/www/html/aquadactyl
 sudo chmod -R 755 /var/www/html/aquadactyl
 
-# Создание виртуального хоста для панели
+# Создание виртуального хоста для панели Aquadactyl
 sudo bash -c "cat > /etc/apache2/sites-available/$panel_domain.conf <<EOF
 <VirtualHost *:80>
     ServerName $panel_domain
@@ -65,25 +75,14 @@ chmod +x /usr/local/bin/wings
 
 sudo mkdir -p /etc/pterodactyl
 sudo bash -c "cat > /etc/pterodactyl/config.yml <<EOF
-# Example Wings Configuration
-# https://pterodactyl.io/wings/1.0/configuration.html
-# This is a simplified example for basic configuration.
-
-# The panel url used to fetch the node configuration
+# Пример конфигурации Wings
 panel_url: 'http://$panel_domain'
-
-# This is the token used to authenticate this node with the panel
 token_id: 'YourTokenID'
 token: 'YourToken'
-
-# Set the domain for the node
 domain: '$wings_domain'
-
-# Bind settings for Wings
 bind:
   host: 0.0.0.0
   port: 8080
-
 EOF"
 
 # Создание виртуального хоста для Wings
