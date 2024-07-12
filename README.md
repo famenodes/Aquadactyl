@@ -28,4 +28,6 @@ Aquadactyl — это современная и интуитивно понят�
 
 # Installer command
 
-curl -sSL https://raw.githubusercontent.com/famenodes/Aquadactyl/main/install.sh -o install.sh && dos2unix install.sh && chmod +x install.sh && ./install.sh
+curl -sSL https://raw.githubusercontent.com/famenodes/Aquadactyl/main/install.sh -o install.sh
+chmod +x install.sh
+./install.sh
